@@ -2,101 +2,192 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#121212">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#000000">
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon.png">
     <title>Altimeter</title>
     <style>
         :root {
-            --bg-color: #121212;
-            --card-bg: #1e1e1e;
+            --bg-color: #000000;
             --text-main: #ffffff;
-            --text-muted: #b0b0b0;
+            --text-muted: #666666;
             --accent: #00e676;
             --error: #ff5252;
         }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             background-color: var(--bg-color);
             color: var(--text-main);
+            margin: 0;
+            height: 100vh;
+            overflow: hidden; /* Prevents scrolling */
+            overscroll-behavior: none;
+        }
+
+        /* The Main App Container - Now Full Screen */
+        .app-layout {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between; /* Pushes content to top/center/bottom */
+            align-items: center;
+            text-align: center;
+            
+            /* Safe Area for Notches/Home Bars */
+            padding-top: max(20px, env(safe-area-inset-top)); 
+            padding-bottom: max(40px, env(safe-area-inset-bottom));
+            padding-left: 20px;
+            padding-right: 20px;
+            box-sizing: border-box;
+        }
+
+        /* --- TOP SECTION --- */
+        header {
+            width: 100%;
+            opacity: 0.8;
+        }
+        h1 { 
+            font-size: 0.9rem; 
+            color: var(--text-muted); 
+            text-transform: uppercase; 
+            letter-spacing: 2px; 
+            margin: 0;
+        }
+
+        /* --- MIDDLE SECTION (The Data) --- */
+        .dashboard {
+            flex-grow: 1; /* Takes up all available space */
+            display: flex;
+            flex-direction: column;
+            justify-content: center; /* Centers content vertically */
+            align-items: center;
+            width: 100%;
+        }
+
+        .value-group { margin-bottom: 20px; }
+        .value { 
+            font-size: 5.5rem; /* Larger for full screen */
+            font-weight: 700; 
+            line-height: 1; 
+            letter-spacing: -2px;
+            font-variant-numeric: tabular-nums; /* Prevents jittering numbers */
+        }
+        .unit { font-size: 1.5rem; color: var(--accent); font-weight: 600; vertical-align: super;}
+
+        .variance-box {
+            font-size: 1rem;
+            color: #444;
+            border: 1px solid #333;
+            padding: 5px 15px;
+            border-radius: 20px;
+            display: inline-block;
+            transition: opacity 0.3s;
+        }
+        
+        .sub-metric {
+            color: var(--text-muted);
+            font-size: 1.2rem;
+            margin-top: 10px;
+        }
+
+        /* --- BOTTOM SECTION (Controls) --- */
+        .controls {
+            width: 100%;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
-            padding: 20px;
-            box-sizing: border-box;
-            overscroll-behavior: none;
-        }
-        .container {
-            background-color: var(--card-bg);
-            padding: 40px;
-            border-radius: 20px;
-            text-align: center;
-            max-width: 400px;
-            width: 100%;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-        }
-        h1 { font-size: 1rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 2px; }
-        .value { font-size: 4.5rem; font-weight: 700; display: block; line-height: 1; }
-        .unit { font-size: 1.5rem; color: var(--accent); font-weight: 500; }
-        .details { margin-top: 30px; padding-top: 20px; border-top: 1px solid #333; color: var(--text-muted); font-size: 0.9rem; display: flex; justify-content: space-between;}
-        button { background-color: var(--accent); color: #000; border: none; padding: 15px 40px; font-size: 1.1rem; font-weight: bold; border-radius: 50px; cursor: pointer; margin-top: 20px; }
-        
-        /* New Pulse Animation Styles */
-        .status-container {
-            margin-top: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 20px;
-        }
-        .pulse-dot {
-            width: 10px;
-            height: 10px;
-            background-color: var(--accent);
-            border-radius: 50%;
-            margin-right: 10px;
-            box-shadow: 0 0 0 0 rgba(0, 230, 118, 0.7);
-            animation: gps-pulse 1.5s infinite;
-        }
-        .status-text { font-size: 0.8rem; color: #666; }
-        
-        @keyframes gps-pulse {
-            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 230, 118, 0.7); }
-            70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(0, 230, 118, 0); }
-            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 230, 118, 0); }
+            gap: 20px;
+            min-height: 100px; /* Reserve space so layout doesn't jump */
         }
 
+        button { 
+            background-color: var(--accent); 
+            color: #000; 
+            border: none; 
+            padding: 18px 60px; 
+            font-size: 1.1rem; 
+            font-weight: 700; 
+            border-radius: 50px; 
+            cursor: pointer; 
+            box-shadow: 0 0 20px rgba(0, 230, 118, 0.3);
+            transition: transform 0.1s;
+        }
+        button:active { transform: scale(0.96); }
+
+        /* Status Bar */
+        .status-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+
+        /* Pulse Dot */
+        .dot {
+            width: 8px;
+            height: 8px;
+            background-color: #333;
+            border-radius: 50%;
+        }
+        .dot.ping {
+            background-color: var(--accent);
+            box-shadow: 0 0 15px var(--accent);
+            animation: radar-ping 0.8s ease-out;
+        }
+        @keyframes radar-ping {
+            0% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(4); opacity: 0; }
+        }
+
+        /* Utility */
         .hidden { display: none !important; }
-        .error-text { color: var(--error) !important; }
+        .invisible { opacity: 0; }
+        .text-error { color: var(--error) !important; }
+        .stale { opacity: 0.3; filter: blur(2px); transition: all 0.5s; } /* Blur effect on signal loss */
+
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Altimeter v2</h1>
-        
-        <div id="data-display" class="hidden">
-            <div style="margin: 30px 0;">
-                <span class="value" id="alt-meters">0</span>
-                <span class="unit">meters</span>
+
+    <div class="app-layout">
+        <header>
+            <h1>Altimeter EMA</h1>
+        </header>
+
+        <div class="dashboard">
+            <div id="start-msg" style="color: #444; max-width: 250px; line-height: 1.5;">
+                Tap start to begin GPS tracking
             </div>
-            <div class="details">
-                <span id="alt-feet">0 ft</span>
-                <span>± <span id="accuracy">--</span>m</span>
+
+            <div id="live-data" class="hidden">
+                <div class="value-group">
+                    <span class="value" id="alt-meters">0</span>
+                    <span class="unit">m</span>
+                </div>
+                
+                <div id="variance-box" class="variance-box">
+                    ± <span id="accuracy">--</span>m
+                </div>
+
+                <div class="sub-metric">
+                    <span id="alt-feet">0</span> ft
+                </div>
             </div>
         </div>
 
-        <div id="start-screen">
-            <p>GPS Altitude</p>
-            <button onclick="startTracking()">Start</button>
-        </div>
-        
-        <div class="status-container">
-            <div id="gps-pulse" class="pulse-dot hidden"></div>
-            <span id="status-text" class="status-text">Ready to track</span>
+        <div class="controls">
+            <button id="btn-start" onclick="startTracking()">START</button>
+            
+            <div class="status-bar">
+                <div id="pulse-dot" class="dot hidden"></div>
+                <span id="status-text">Ready</span>
+            </div>
         </div>
     </div>
 
@@ -105,45 +196,92 @@
             navigator.serviceWorker.register('sw.js');
         }
 
+        let emaAltitude = null;
+        const ALPHA = 0.2; 
+        
+        // Timing
+        let lastUpdateTime = 0;
+        const UPDATE_INTERVAL = 1500; 
+        let signalWatchdog = null;    
+
         function startTracking() {
+            const btnStart = document.getElementById('btn-start');
+            const startMsg = document.getElementById('start-msg');
+            const liveData = document.getElementById('live-data');
             const statusText = document.getElementById('status-text');
-            const pulseDot = document.getElementById('gps-pulse');
-            const dataDisplay = document.getElementById('data-display');
-            const startScreen = document.getElementById('start-screen');
-            
+            const pulseDot = document.getElementById('pulse-dot');
+            const altMeters = document.getElementById('alt-meters');
+            const varianceBox = document.getElementById('variance-box');
+
             if (!navigator.geolocation) {
-                statusText.textContent = "GPS not supported";
-                statusText.classList.add('error-text');
+                statusText.textContent = "GPS Not Supported";
+                statusText.classList.add('text-error');
                 return;
             }
 
-            statusText.textContent = "Acquiring satellite lock...";
-            startScreen.classList.add('hidden');
-            dataDisplay.classList.remove('hidden');
+            // Transition UI
+            btnStart.classList.add('hidden'); // Hide button
+            startMsg.classList.add('hidden');
+            liveData.classList.remove('hidden');
+            pulseDot.classList.remove('hidden');
+            statusText.textContent = "Acquiring Signal...";
+
+            const triggerSignalLoss = () => {
+                statusText.textContent = "NO SIGNAL";
+                statusText.classList.add('text-error');
+                statusText.style.color = ""; 
+                pulseDot.classList.remove('ping');
+                liveData.classList.add('stale'); // Apply blur effect
+                varianceBox.classList.add('invisible');
+            };
+
+            signalWatchdog = setTimeout(triggerSignalLoss, 10000);
 
             navigator.geolocation.watchPosition(
                 (pos) => {
-                    const alt = pos.coords.altitude;
-                    
-                    // Activate the visual pulse
-                    pulseDot.classList.remove('hidden');
-                    statusText.style.color = "#00e676";
-                    statusText.textContent = "Receiving Signal";
+                    const rawAlt = pos.coords.altitude;
+                    const accuracy = pos.coords.altitudeAccuracy;
+                    const currentTime = Date.now();
 
-                    if (alt === null) {
-                        statusText.textContent = "GPS Active (No Altitude Data)";
-                        statusText.style.color = "#ffb74d"; // Orange warning
-                        return;
+                    // Watchdog Reset
+                    clearTimeout(signalWatchdog);
+                    signalWatchdog = setTimeout(triggerSignalLoss, 10000);
+                    
+                    statusText.classList.remove('text-error');
+                    liveData.classList.remove('stale'); // Remove blur
+                    varianceBox.classList.remove('invisible');
+
+                    // Math
+                    if (rawAlt !== null) {
+                        if (emaAltitude === null) emaAltitude = rawAlt;
+                        else emaAltitude = (rawAlt * ALPHA) + (emaAltitude * (1 - ALPHA));
                     }
 
-                    document.getElementById('alt-meters').textContent = Math.round(alt);
-                    document.getElementById('alt-feet').textContent = Math.round(alt * 3.28084) + " ft";
-                    document.getElementById('accuracy').textContent = Math.round(pos.coords.altitudeAccuracy || 0);
+                    // Update UI (Throttled)
+                    if (currentTime - lastUpdateTime > UPDATE_INTERVAL) {
+                        pulseDot.classList.remove('ping');
+                        void pulseDot.offsetWidth; 
+                        pulseDot.classList.add('ping');
+
+                        statusText.style.color = "#00e676";
+                        statusText.textContent = "SIGNAL ACTIVE";
+
+                        if (emaAltitude !== null) {
+                            document.getElementById('alt-meters').textContent = Math.round(emaAltitude);
+                            document.getElementById('alt-feet').textContent = Math.round(emaAltitude * 3.28084);
+                        }
+                        
+                        if (accuracy) {
+                             document.getElementById('accuracy').textContent = Math.round(accuracy);
+                        } else {
+                             document.getElementById('accuracy').textContent = "?";
+                        }
+                        lastUpdateTime = currentTime;
+                    }
                 }, 
                 (err) => {
-                    pulseDot.classList.add('hidden'); // Hide pulse on error
-                    statusText.textContent = "GPS Error: " + err.message;
-                    statusText.classList.add('error-text');
+                    statusText.textContent = "GPS ERROR";
+                    statusText.classList.add('text-error');
                 },
                 { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
             );
