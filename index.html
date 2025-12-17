@@ -8,46 +8,78 @@
     <link rel="apple-touch-icon" href="icon.png">
     <title>Altimeter</title>
     <style>
+        /* --- COLOR THEMES --- */
         :root {
-            --bg-color: #000000;
+            /* Default Dark Mode */
+            --bg-body: #000000;
+            --bg-card: #121212;
             --text-main: #ffffff;
-            --text-muted: #666666;
+            --text-muted: #888888;
             --accent: #00e676;
+            --variance-bg: #222222;
+            --variance-text: #e0e0e0; /* Brighter for visibility */
             --error: #ff5252;
+            --btn-text: #000000;
+            --shadow: rgba(0,0,0,0.5);
+        }
+
+        /* Light Mode Overrides */
+        body.light-mode {
+            --bg-body: #f0f2f5;
+            --bg-card: #ffffff;
+            --text-main: #222222;
+            --text-muted: #666666;
+            --accent: #00c853;
+            --variance-bg: #eeeeee;
+            --variance-text: #333333;
+            --btn-text: #ffffff;
+            --shadow: rgba(0,0,0,0.1);
         }
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: var(--bg-color);
+            background-color: var(--bg-body);
             color: var(--text-main);
             margin: 0;
             height: 100vh;
-            overflow: hidden; /* Prevents scrolling */
-            overscroll-behavior: none;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.3s;
         }
 
-        /* The Main App Container - Now Full Screen */
-        .app-layout {
-            height: 100%;
+        /* --- THE 90% FLOATING CONTAINER --- */
+        .app-container {
+            width: 100%;
+            max-width: 500px; /* Tablet constraint */
+            height: 90vh;     /* 90% Height as requested */
+            background-color: var(--bg-card);
+            border-radius: 30px;
+            box-shadow: 0 10px 40px var(--shadow);
+            
             display: flex;
             flex-direction: column;
-            justify-content: space-between; /* Pushes content to top/center/bottom */
+            justify-content: space-between;
             align-items: center;
             text-align: center;
             
-            /* Safe Area for Notches/Home Bars */
-            padding-top: max(20px, env(safe-area-inset-top)); 
-            padding-bottom: max(40px, env(safe-area-inset-bottom));
-            padding-left: 20px;
-            padding-right: 20px;
+            padding: 20px;
+            box-sizing: border-box;
+            position: relative;
+            transition: background-color 0.3s;
+        }
+
+        /* --- HEADER & THEME TOGGLE --- */
+        header {
+            width: 100%;
+            display: flex;
+            justify-content: space-between; /* Spreads Title and Button */
+            align-items: center;
+            padding: 0 10px;
             box-sizing: border-box;
         }
 
-        /* --- TOP SECTION --- */
-        header {
-            width: 100%;
-            opacity: 0.8;
-        }
         h1 { 
             font-size: 0.9rem; 
             color: var(--text-muted); 
@@ -56,55 +88,75 @@
             margin: 0;
         }
 
-        /* --- MIDDLE SECTION (The Data) --- */
+        .theme-toggle {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+            font-size: 1.2rem;
+            box-shadow: none;
+            color: var(--text-muted);
+        }
+
+        /* --- DATA DASHBOARD --- */
         .dashboard {
-            flex-grow: 1; /* Takes up all available space */
+            flex-grow: 1;
             display: flex;
             flex-direction: column;
-            justify-content: center; /* Centers content vertically */
+            justify-content: center;
             align-items: center;
             width: 100%;
         }
 
         .value-group { margin-bottom: 20px; }
+        
         .value { 
-            font-size: 5.5rem; /* Larger for full screen */
+            font-size: 5rem; 
             font-weight: 700; 
             line-height: 1; 
             letter-spacing: -2px;
-            font-variant-numeric: tabular-nums; /* Prevents jittering numbers */
+            font-variant-numeric: tabular-nums;
         }
-        .unit { font-size: 1.5rem; color: var(--accent); font-weight: 600; vertical-align: super;}
+        
+        .unit { 
+            font-size: 1.5rem; 
+            color: var(--accent); 
+            font-weight: 600; 
+            vertical-align: super;
+        }
 
+        /* Improved Variance Box */
         .variance-box {
             font-size: 1rem;
-            color: #444;
-            border: 1px solid #333;
-            padding: 5px 15px;
+            background-color: var(--variance-bg);
+            color: var(--variance-text); /* Brighter color */
+            padding: 8px 20px;
             border-radius: 20px;
             display: inline-block;
-            transition: opacity 0.3s;
+            font-weight: 500;
+            transition: opacity 0.3s, background-color 0.3s;
         }
         
         .sub-metric {
             color: var(--text-muted);
             font-size: 1.2rem;
-            margin-top: 10px;
+            margin-top: 15px;
         }
 
-        /* --- BOTTOM SECTION (Controls) --- */
+        /* --- CONTROLS --- */
         .controls {
             width: 100%;
             display: flex;
             flex-direction: column;
             align-items: center;
             gap: 20px;
-            min-height: 100px; /* Reserve space so layout doesn't jump */
+            padding-bottom: 10px;
         }
 
-        button { 
+        .btn-main { 
             background-color: var(--accent); 
-            color: #000; 
+            color: var(--btn-text); 
             border: none; 
             padding: 18px 60px; 
             font-size: 1.1rem; 
@@ -114,9 +166,8 @@
             box-shadow: 0 0 20px rgba(0, 230, 118, 0.3);
             transition: transform 0.1s;
         }
-        button:active { transform: scale(0.96); }
+        .btn-main:active { transform: scale(0.96); }
 
-        /* Status Bar */
         .status-bar {
             display: flex;
             align-items: center;
@@ -128,15 +179,16 @@
             font-weight: 600;
         }
 
-        /* Pulse Dot */
         .dot {
             width: 8px;
             height: 8px;
-            background-color: #333;
+            background-color: var(--text-muted);
             border-radius: 50%;
+            opacity: 0.5;
         }
         .dot.ping {
             background-color: var(--accent);
+            opacity: 1;
             box-shadow: 0 0 15px var(--accent);
             animation: radar-ping 0.8s ease-out;
         }
@@ -145,24 +197,24 @@
             100% { transform: scale(4); opacity: 0; }
         }
 
-        /* Utility */
         .hidden { display: none !important; }
         .invisible { opacity: 0; }
         .text-error { color: var(--error) !important; }
-        .stale { opacity: 0.3; filter: blur(2px); transition: all 0.5s; } /* Blur effect on signal loss */
-
+        .stale { opacity: 0.3; filter: blur(2px); transition: all 0.5s; }
+        
     </style>
 </head>
 <body>
 
-    <div class="app-layout">
+    <div class="app-container">
         <header>
-            <h1>Altimeter EMA</h1>
+            <h1>Altimeter</h1>
+            <button class="theme-toggle" onclick="toggleTheme()" id="theme-btn">☀️</button>
         </header>
 
         <div class="dashboard">
-            <div id="start-msg" style="color: #444; max-width: 250px; line-height: 1.5;">
-                Tap start to begin GPS tracking
+            <div id="start-msg" style="color: var(--text-muted); max-width: 250px; line-height: 1.5;">
+                Tap start to begin
             </div>
 
             <div id="live-data" class="hidden">
@@ -182,7 +234,7 @@
         </div>
 
         <div class="controls">
-            <button id="btn-start" onclick="startTracking()">START</button>
+            <button id="btn-start" class="btn-main" onclick="startTracking()">START</button>
             
             <div class="status-bar">
                 <div id="pulse-dot" class="dot hidden"></div>
@@ -196,10 +248,24 @@
             navigator.serviceWorker.register('sw.js');
         }
 
+        // --- THEME SWITCHER LOGIC ---
+        function toggleTheme() {
+            const body = document.body;
+            const btn = document.getElementById('theme-btn');
+            body.classList.toggle('light-mode');
+            
+            if (body.classList.contains('light-mode')) {
+                btn.textContent = "🌙";
+                document.querySelector('meta[name="theme-color"]').setAttribute("content", "#f0f2f5");
+            } else {
+                btn.textContent = "☀️";
+                document.querySelector('meta[name="theme-color"]').setAttribute("content", "#000000");
+            }
+        }
+
+        // --- ALTIMETER LOGIC ---
         let emaAltitude = null;
         const ALPHA = 0.2; 
-        
-        // Timing
         let lastUpdateTime = 0;
         const UPDATE_INTERVAL = 1500; 
         let signalWatchdog = null;    
@@ -219,8 +285,7 @@
                 return;
             }
 
-            // Transition UI
-            btnStart.classList.add('hidden'); // Hide button
+            btnStart.classList.add('hidden');
             startMsg.classList.add('hidden');
             liveData.classList.remove('hidden');
             pulseDot.classList.remove('hidden');
@@ -231,7 +296,7 @@
                 statusText.classList.add('text-error');
                 statusText.style.color = ""; 
                 pulseDot.classList.remove('ping');
-                liveData.classList.add('stale'); // Apply blur effect
+                liveData.classList.add('stale');
                 varianceBox.classList.add('invisible');
             };
 
@@ -240,30 +305,33 @@
             navigator.geolocation.watchPosition(
                 (pos) => {
                     const rawAlt = pos.coords.altitude;
-                    const accuracy = pos.coords.altitudeAccuracy;
                     const currentTime = Date.now();
 
-                    // Watchdog Reset
+                    // --- VARIANCE FIX: FALLBACK ---
+                    // If altitudeAccuracy is null (common on Android), use general accuracy
+                    let accuracy = pos.coords.altitudeAccuracy;
+                    if (!accuracy || accuracy === null) {
+                        accuracy = pos.coords.accuracy; // Fallback to horizontal accuracy
+                    }
+
                     clearTimeout(signalWatchdog);
                     signalWatchdog = setTimeout(triggerSignalLoss, 10000);
                     
                     statusText.classList.remove('text-error');
-                    liveData.classList.remove('stale'); // Remove blur
+                    liveData.classList.remove('stale');
                     varianceBox.classList.remove('invisible');
 
-                    // Math
                     if (rawAlt !== null) {
                         if (emaAltitude === null) emaAltitude = rawAlt;
                         else emaAltitude = (rawAlt * ALPHA) + (emaAltitude * (1 - ALPHA));
                     }
 
-                    // Update UI (Throttled)
                     if (currentTime - lastUpdateTime > UPDATE_INTERVAL) {
                         pulseDot.classList.remove('ping');
                         void pulseDot.offsetWidth; 
                         pulseDot.classList.add('ping');
 
-                        statusText.style.color = "#00e676";
+                        statusText.style.color = "var(--accent)";
                         statusText.textContent = "SIGNAL ACTIVE";
 
                         if (emaAltitude !== null) {
@@ -271,11 +339,13 @@
                             document.getElementById('alt-feet').textContent = Math.round(emaAltitude * 3.28084);
                         }
                         
+                        // Update Variance
                         if (accuracy) {
                              document.getElementById('accuracy').textContent = Math.round(accuracy);
                         } else {
-                             document.getElementById('accuracy').textContent = "?";
+                             document.getElementById('accuracy').textContent = "~"; // Tilde if truly unknown
                         }
+                        
                         lastUpdateTime = currentTime;
                     }
                 }, 
