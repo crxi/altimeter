@@ -38,13 +38,17 @@
             --loc-bg: #f8f9fa;
         }
 
+        html, body {
+            height: 100%; /* Fix for mobile browser height issues */
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             background-color: var(--bg-body);
             color: var(--text-main);
-            margin: 0;
-            height: 100vh;
-            overflow: hidden;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -53,16 +57,18 @@
 
         /* --- THE 90% FLOATING CONTAINER --- */
         .app-container {
-            width: 100%;
-            max-width: 500px; 
-            height: 90vh;     
+            width: 90%;       /* Width constraint */
+            max-width: 400px; /* Max width for tablets/desktop */
+            height: 90%;      /* Height constraint */
+            max-height: 800px;
+            
             background-color: var(--bg-card);
             border-radius: 30px;
             box-shadow: 0 10px 40px var(--shadow);
             
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
+            justify-content: space-evenly; /* FIX: Distributes items nicely instead of pushing to bottom */
             align-items: center;
             text-align: center;
             
@@ -78,8 +84,9 @@
             display: flex;
             justify-content: space-between; 
             align-items: center;
-            padding: 0 10px;
+            padding: 0 5px;
             box-sizing: border-box;
+            /* No margin bottom, let space-evenly handle it */
         }
 
         h1 { 
@@ -103,15 +110,15 @@
 
         /* --- DATA DASHBOARD --- */
         .dashboard {
-            flex-grow: 1;
+            /* Removed flex-grow to stop it from pushing controls down */
+            width: 100%;
             display: flex;
             flex-direction: column;
-            justify-content: center; /* Push slightly higher */
             align-items: center;
-            width: 100%;
+            justify-content: center;
         }
 
-        .value-group { margin-bottom: 20px; }
+        .value-group { margin-bottom: 15px; }
         
         .value { 
             font-size: 5rem; 
@@ -132,7 +139,7 @@
             font-size: 1rem;
             background-color: var(--variance-bg);
             color: var(--variance-text); 
-            padding: 8px 20px;
+            padding: 6px 18px;
             border-radius: 20px;
             display: inline-block;
             font-weight: 500;
@@ -141,34 +148,36 @@
         
         .sub-metric {
             color: var(--text-muted);
-            font-size: 1.2rem;
-            margin-top: 15px;
+            font-size: 1.1rem;
+            margin-top: 10px;
         }
 
-        /* --- NEW LOCATION BLOCK --- */
+        /* --- LOCATION BLOCK (Fixed Wrapping) --- */
         .location-block {
-            margin-top: 30px;
-            padding: 15px;
+            margin-top: 25px;
+            padding: 12px 15px;
             background-color: var(--loc-bg);
             border-radius: 15px;
-            width: 90%;
+            width: 100%;
+            box-sizing: border-box;
             transition: opacity 0.5s;
         }
         
         .loc-city {
-            font-size: 1.1rem;
+            font-size: 1rem;
             font-weight: 600;
             color: var(--text-main);
             margin-bottom: 5px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            line-height: 1.3;
+            /* FIX: Allow text wrap */
+            white-space: normal; 
+            word-wrap: break-word;
         }
         
         .loc-coords {
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             color: var(--text-muted);
-            font-family: monospace; /* Monospace for coordinates looks techy */
+            font-family: monospace; 
         }
 
         /* --- CONTROLS --- */
@@ -177,15 +186,14 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 20px;
-            padding-bottom: 10px;
+            gap: 15px;
         }
 
         .btn-main { 
             background-color: var(--accent); 
             color: var(--btn-text); 
             border: none; 
-            padding: 18px 60px; 
+            padding: 16px 50px; 
             font-size: 1.1rem; 
             font-weight: 700; 
             border-radius: 50px; 
@@ -199,7 +207,7 @@
             display: flex;
             align-items: center;
             gap: 10px;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             color: var(--text-muted);
             text-transform: uppercase;
             letter-spacing: 1px;
@@ -280,7 +288,7 @@
             navigator.serviceWorker.register('sw.js');
         }
 
-        // --- THEME SWITCHER LOGIC ---
+        // --- THEME SWITCHER ---
         function toggleTheme() {
             const body = document.body;
             const btn = document.getElementById('theme-btn');
@@ -304,7 +312,7 @@
 
         // --- LOCATION LOGIC ---
         let lastCityFetch = 0;
-        const CITY_FETCH_INTERVAL = 120000; // 2 Minutes (Prevents API throttling)
+        const CITY_FETCH_INTERVAL = 120000;
 
         function startTracking() {
             const btnStart = document.getElementById('btn-start');
@@ -312,10 +320,8 @@
             const liveData = document.getElementById('live-data');
             const statusText = document.getElementById('status-text');
             const pulseDot = document.getElementById('pulse-dot');
-            const altMeters = document.getElementById('alt-meters');
             const varianceBox = document.getElementById('variance-box');
             
-            // Location Elements
             const locCity = document.getElementById('loc-city');
             const locCoords = document.getElementById('loc-coords');
 
@@ -350,10 +356,7 @@
                     const currentTime = Date.now();
 
                     // --- LOCATION HANDLER ---
-                    // 1. Update Coordinates Text (Instant)
                     locCoords.textContent = `${lat.toFixed(4)}°, ${lon.toFixed(4)}°`;
-
-                    // 2. Fetch City Name (Throttled: Every 2 mins)
                     if (currentTime - lastCityFetch > CITY_FETCH_INTERVAL) {
                         fetchCityName(lat, lon);
                         lastCityFetch = currentTime;
@@ -407,32 +410,25 @@
             );
         }
 
-        // --- REVERSE GEOCODING FUNCTION ---
         function fetchCityName(lat, lon) {
             const locCity = document.getElementById('loc-city');
-            
-            // Using BigDataCloud Free API (No Key Required for client-side)
             const apiURL = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`;
 
             fetch(apiURL)
                 .then(response => response.json())
                 .then(data => {
-                    // Try to find the most relevant name
                     const city = data.city || data.locality || data.principalSubdivision;
                     const country = data.countryCode;
                     
                     if (city && country) {
                         locCity.textContent = `${city}, ${country}`;
                     } else if (data.countryName) {
-                        locCity.textContent = data.countryName; // Fallback to just country (e.g. in ocean/desert)
+                        locCity.textContent = data.countryName;
                     } else {
                         locCity.textContent = "Unknown Location";
                     }
                 })
-                .catch(err => {
-                    console.log("Loc fetch failed", err);
-                    // Don't show error to user, just leave previous text or default
-                });
+                .catch(err => console.log(err));
         }
     </script>
 </body>
