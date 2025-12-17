@@ -17,10 +17,11 @@
             --text-muted: #888888;
             --accent: #00e676;
             --variance-bg: #222222;
-            --variance-text: #e0e0e0; /* Brighter for visibility */
+            --variance-text: #e0e0e0;
             --error: #ff5252;
             --btn-text: #000000;
             --shadow: rgba(0,0,0,0.5);
+            --loc-bg: #1a1a1a;
         }
 
         /* Light Mode Overrides */
@@ -34,6 +35,7 @@
             --variance-text: #333333;
             --btn-text: #ffffff;
             --shadow: rgba(0,0,0,0.1);
+            --loc-bg: #f8f9fa;
         }
 
         body {
@@ -52,8 +54,8 @@
         /* --- THE 90% FLOATING CONTAINER --- */
         .app-container {
             width: 100%;
-            max-width: 500px; /* Tablet constraint */
-            height: 90vh;     /* 90% Height as requested */
+            max-width: 500px; 
+            height: 90vh;     
             background-color: var(--bg-card);
             border-radius: 30px;
             box-shadow: 0 10px 40px var(--shadow);
@@ -74,7 +76,7 @@
         header {
             width: 100%;
             display: flex;
-            justify-content: space-between; /* Spreads Title and Button */
+            justify-content: space-between; 
             align-items: center;
             padding: 0 10px;
             box-sizing: border-box;
@@ -104,7 +106,7 @@
             flex-grow: 1;
             display: flex;
             flex-direction: column;
-            justify-content: center;
+            justify-content: center; /* Push slightly higher */
             align-items: center;
             width: 100%;
         }
@@ -126,11 +128,10 @@
             vertical-align: super;
         }
 
-        /* Improved Variance Box */
         .variance-box {
             font-size: 1rem;
             background-color: var(--variance-bg);
-            color: var(--variance-text); /* Brighter color */
+            color: var(--variance-text); 
             padding: 8px 20px;
             border-radius: 20px;
             display: inline-block;
@@ -142,6 +143,32 @@
             color: var(--text-muted);
             font-size: 1.2rem;
             margin-top: 15px;
+        }
+
+        /* --- NEW LOCATION BLOCK --- */
+        .location-block {
+            margin-top: 30px;
+            padding: 15px;
+            background-color: var(--loc-bg);
+            border-radius: 15px;
+            width: 90%;
+            transition: opacity 0.5s;
+        }
+        
+        .loc-city {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-main);
+            margin-bottom: 5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .loc-coords {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-family: monospace; /* Monospace for coordinates looks techy */
         }
 
         /* --- CONTROLS --- */
@@ -217,7 +244,7 @@
                 Tap start to begin
             </div>
 
-            <div id="live-data" class="hidden">
+            <div id="live-data" class="hidden" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
                 <div class="value-group">
                     <span class="value" id="alt-meters">0</span>
                     <span class="unit">m</span>
@@ -229,6 +256,11 @@
 
                 <div class="sub-metric">
                     <span id="alt-feet">0</span> ft
+                </div>
+
+                <div class="location-block">
+                    <div id="loc-city" class="loc-city">Locating...</div>
+                    <div id="loc-coords" class="loc-coords">--°N, --°E</div>
                 </div>
             </div>
         </div>
@@ -270,6 +302,10 @@
         const UPDATE_INTERVAL = 1500; 
         let signalWatchdog = null;    
 
+        // --- LOCATION LOGIC ---
+        let lastCityFetch = 0;
+        const CITY_FETCH_INTERVAL = 120000; // 2 Minutes (Prevents API throttling)
+
         function startTracking() {
             const btnStart = document.getElementById('btn-start');
             const startMsg = document.getElementById('start-msg');
@@ -278,6 +314,10 @@
             const pulseDot = document.getElementById('pulse-dot');
             const altMeters = document.getElementById('alt-meters');
             const varianceBox = document.getElementById('variance-box');
+            
+            // Location Elements
+            const locCity = document.getElementById('loc-city');
+            const locCoords = document.getElementById('loc-coords');
 
             if (!navigator.geolocation) {
                 statusText.textContent = "GPS Not Supported";
@@ -305,13 +345,24 @@
             navigator.geolocation.watchPosition(
                 (pos) => {
                     const rawAlt = pos.coords.altitude;
+                    const lat = pos.coords.latitude;
+                    const lon = pos.coords.longitude;
                     const currentTime = Date.now();
 
-                    // --- VARIANCE FIX: FALLBACK ---
-                    // If altitudeAccuracy is null (common on Android), use general accuracy
+                    // --- LOCATION HANDLER ---
+                    // 1. Update Coordinates Text (Instant)
+                    locCoords.textContent = `${lat.toFixed(4)}°, ${lon.toFixed(4)}°`;
+
+                    // 2. Fetch City Name (Throttled: Every 2 mins)
+                    if (currentTime - lastCityFetch > CITY_FETCH_INTERVAL) {
+                        fetchCityName(lat, lon);
+                        lastCityFetch = currentTime;
+                    }
+
+                    // --- ALTIMETER HANDLER ---
                     let accuracy = pos.coords.altitudeAccuracy;
                     if (!accuracy || accuracy === null) {
-                        accuracy = pos.coords.accuracy; // Fallback to horizontal accuracy
+                        accuracy = pos.coords.accuracy; 
                     }
 
                     clearTimeout(signalWatchdog);
@@ -339,11 +390,10 @@
                             document.getElementById('alt-feet').textContent = Math.round(emaAltitude * 3.28084);
                         }
                         
-                        // Update Variance
                         if (accuracy) {
                              document.getElementById('accuracy').textContent = Math.round(accuracy);
                         } else {
-                             document.getElementById('accuracy').textContent = "~"; // Tilde if truly unknown
+                             document.getElementById('accuracy').textContent = "~";
                         }
                         
                         lastUpdateTime = currentTime;
@@ -355,6 +405,34 @@
                 },
                 { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
             );
+        }
+
+        // --- REVERSE GEOCODING FUNCTION ---
+        function fetchCityName(lat, lon) {
+            const locCity = document.getElementById('loc-city');
+            
+            // Using BigDataCloud Free API (No Key Required for client-side)
+            const apiURL = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`;
+
+            fetch(apiURL)
+                .then(response => response.json())
+                .then(data => {
+                    // Try to find the most relevant name
+                    const city = data.city || data.locality || data.principalSubdivision;
+                    const country = data.countryCode;
+                    
+                    if (city && country) {
+                        locCity.textContent = `${city}, ${country}`;
+                    } else if (data.countryName) {
+                        locCity.textContent = data.countryName; // Fallback to just country (e.g. in ocean/desert)
+                    } else {
+                        locCity.textContent = "Unknown Location";
+                    }
+                })
+                .catch(err => {
+                    console.log("Loc fetch failed", err);
+                    // Don't show error to user, just leave previous text or default
+                });
         }
     </script>
 </body>
