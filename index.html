@@ -285,9 +285,17 @@
 
     <script>
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js');
-        }
+            navigator.serviceWorker.register('sw.js').then(reg => {
+                // Check for updates every time page opens
+                reg.update();
+    });
 
+    // If a new service worker takes over, reload the page automatically
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+        window.location.reload();
+    });
+ }
+        
         // --- THEME SWITCHER ---
         function toggleTheme() {
             const body = document.body;
